@@ -45,7 +45,7 @@ $ docker run --rm -it \
     quay.io/kubespray/kubespray:v2.16.0 bash
 ```
 inventory 생성
-```shell
+```
 # declare -a IPS=(192.168.0.200 192.168.0.201)
 # CONFIG_FILE=/kubespray/inventory/mycluster/hosts.yaml python3 /kubespray/contrib/inventory_builder/inventory.py ${IPS[@]}
 # exit # 설정 파일 수정 위해 잠시 종료
@@ -96,7 +96,7 @@ ingress_nginx_enabled: true
 
 #### kubernetes 클러스터 배포
 kubespray container 환경 재진입하여 아래 커맨드 수행
-```shell
+```
 # ansible all -i inventory/mycluster/hosts.yaml -m ping # SUCCESS 출력 확인
 # ansible-playbook -i inventory/mycluster/hosts.yaml --private-key /root/.ssh/id_rsa --become --become-user=root cluster.yml
 ```
@@ -110,7 +110,7 @@ node1                      : ok=643  changed=131  unreachable=0    failed=0    s
 node2                      : ok=383  changed=76   unreachable=0    failed=0    skipped=648  rescued=0    ignored=1
 ```
 kubespray container 종료
-```shell
+```
 # exit
 ```
 
@@ -135,3 +135,13 @@ NAME    STATUS   ROLES                  AGE     VERSION   INTERNAL-IP     EXTERN
 node1   Ready    control-plane,master   9m42s   v1.21.3   192.168.0.200   <none>        Ubuntu 20.04.2 LTS   5.4.0-77-generic   docker://20.10.7
 node2   Ready    <none>                 8m39s   v1.21.3   192.168.0.201   <none>        Ubuntu 20.04.2 LTS   5.4.0-77-generic   docker://20.10.7
 ```
+
+
+### 참고링크
+- https://github.com/kubernetes-sigs/kubespray
+- https://github.com/kubernetes-sigs/kubespray/blob/master/docs/getting-started.md
+- https://github.com/kubernetes-sigs/kubespray/blob/master/docs/setting-up-your-first-cluster.md
+- https://ssup2.github.io/record/Kubernetes_%EC%84%A4%EC%B9%98_kubespray_Ubuntu_18.04_OpenStack/
+- https://lindarex.github.io/kubernetes/ubuntu-kubernetes-installation-with-kubespray/
+- https://www.whatwant.com/entry/Kubernetes-Vagrant-VirtualBox-Kubespray
+- https://memory-hub.tistory.com/8
