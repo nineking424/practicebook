@@ -20,7 +20,7 @@ sudo systemctl restart sshd
 
 
 ### 설치
-
+기본적으로, Master/Worker가 아닌 배포용 서버에서 실행
 #### SSH 키 등록
 ```shell
 $ ssh-keygen -t rsa # 입력 없이 enter
