@@ -1,6 +1,26 @@
 kubespray를 사용한 kubernetes 설정 및 배포
 ====
 
+### 사전작업 - 모든 노드
+root 로그인 허용
+```
+$ sudo passwd root
+$ sudo vi /etc/ssh/sshd_config
+```
+```
+...
+PermitRootLogin yes
+...
+```
+
+적용
+```
+sudo systemctl restart sshd
+```
+
+
+### 설치
+
 #### SSH 키 등록
 ```shell
 $ ssh-keygen -t rsa # 입력 없이 enter
@@ -135,6 +155,43 @@ NAME    STATUS   ROLES                  AGE     VERSION   INTERNAL-IP     EXTERN
 node1   Ready    control-plane,master   9m42s   v1.21.3   192.168.0.200   <none>        Ubuntu 20.04.2 LTS   5.4.0-77-generic   docker://20.10.7
 node2   Ready    <none>                 8m39s   v1.21.3   192.168.0.201   <none>        Ubuntu 20.04.2 LTS   5.4.0-77-generic   docker://20.10.7
 ```
+
+### OS 설정 확인(optional) - 모든 노드
+Kubespray에서 알아서 해주지만, Kubernetes 설치에 필수적인 OS 설정 적용 여부 확인 방법
+
+#### swap off 확인
+정상 예
+```
+$ cat /proc/swaps
+Filename                                Type            Size    Used    Priority
+```
+비정상 예
+```
+$ cat /proc/swaps
+Filename                                Type            Size    Used    Priority
+/swap.img                               file            2097148 0       -2
+```
+위 경우, 아래 커맨드 실행 후 재확인
+```
+swapoff -a
+```
+
+#### ip forward 설정 확인
+정상 예
+```
+$ cat /proc/sys/net/ipv4/ip_forward
+1
+```
+비정상 예
+```
+$ cat /proc/sys/net/ipv4/ip_forward
+0
+```
+위 경우, 아래 커맨드 실행 후 재확인
+```
+echo 1 > /proc/sys/net/ipv4/ip_forward
+```
+
 
 
 ### 참고링크
