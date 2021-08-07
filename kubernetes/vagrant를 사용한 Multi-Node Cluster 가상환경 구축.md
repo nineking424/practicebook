@@ -1,4 +1,4 @@
-vagrant 사용법
+vagrant를 사용한 Multi-Node Cluster 가상환경 구축
 ====
 
 **※ 기본 명령어**
