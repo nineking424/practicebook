@@ -204,5 +204,5 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 - https://memory-hub.tistory.com/8
 
 **※ 더 알아보기**
-* vagrant + kubeadm + centos 환경에서 kubernetes 직접 설치
-- https://velog.io/@1yangsh/vagrant%EB%A5%BC-%EC%9D%B4%EC%9A%A9%ED%95%9C-k8s-%EC%84%A4%EC%B9%98
+kubernetes 직접 설치(배포도구 
+* vagrant를-이용한-k8s-설치 : https://velog.io/@1yangsh/vagrant를-이용한-k8s-설치
