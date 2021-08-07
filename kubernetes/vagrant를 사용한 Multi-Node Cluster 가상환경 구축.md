@@ -136,3 +136,4 @@ vagrant-vbguest 설치하려 해결
 **※ 참고링크**
 - vagrant : https://judo0179.tistory.com/120
 - Vagrant 여러 개의 VM 생성하기 : https://www.whatwant.com/entry/Vagrant-Multi-VM
+- vagrant root access : https://teamsmiley.github.io/2018/03/17/vagrant-ssh-root/
