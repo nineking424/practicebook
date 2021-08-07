@@ -110,7 +110,7 @@ VM, run `vagrant status NAME`.
 ```
 
 
-#### Trouble shooting - (1)
+### Trouble shooting - (1)
 사용할 수 있는 network interface가 없는 경우 발생,
 ```
  Bringing virtual machine 'default' up with 'virtual-box' provider..
@@ -121,7 +121,7 @@ VM, run `vagrant status NAME`.
 ```
 Virtual Box 재설치하여 해결
 - Vagrant not showing network interface after upgrade to Windows 10 : https://github.com/hashicorp/vagrant/issues/6076
-#### Trouble shooting - (2)
+### Trouble shooting - (2)
 공유폴더 /vagrant 경로를 mount 할 수 없는 경우 발생,
 ```
 Vagrant box. For context, the command attempted was:
@@ -132,7 +132,7 @@ The error output from the command was:
 
 : Invalid argument
 ```
-vagrant-vbguest 설치하려 해결
+vagrant-vbguest 설치하 해결
 - Vagrant 공유 폴더 문제(mount.vboxsf 관련) - vagrant-vbguest 플러그인 :https://javaworld.co.kr/96
 > vagrant-vbguest 플러그인은 guest machine과 VirtualBox host의 Guest Additions 버전이 다를 경우에 알맞은 버전을 설치해 주는 플러그인입니다.
 
