@@ -1,14 +1,26 @@
 vagrant 사용법
 ====
 
+**※ 기본 명령어**
+```
+vagrant box list
+vagrant init
+vagrant up
+vagrant status
+vagrant halt
+vagrant destroy
+vagrant reload
+```
+
 ### 1. vagrant 설치
 - https://www.vagrantup.com/downloads
 - 본 문서 작성일 기준 2.2.18, 64bit
+- C:\vagrant> 경로에서 cmd 실행 후 진행
 ### 2. vagrant init
 ```
-C:\vagrant>vagrant init
+vagrant init
 ```
-### 2. Vagrantfile 설정
+### 3. Vagrantfile 
 - master 1대, worker 3대
 - 기본 admin 계정은 vagrant/vagrant
 ```ruby
@@ -55,6 +67,27 @@ Vagrant.configure("2") do |config|
 end
 ```
 
+### 4. vagrant up - vm 환경구성
+```
+vagrant up
+```
+
+### 5. vagrant status - vm 설치 확인
+```
+C:\vagrant>vagrant status
+Current machine states:
+
+w-k8s-master              running (virtualbox)
+w-k8s-worker1             running (virtualbox)
+w-k8s-worker2             running (virtualbox)
+w-k8s-worker3             running (virtualbox)
+
+This environment represents multiple VMs. The VMs are all listed
+above with their current state. For more information about a specific
+VM, run `vagrant status NAME`.
+```
+
+
 #### Trouble shooting - (1)
 사용할 수 있는 network interface가 없는 경우 발생,
 ```
@@ -80,6 +113,7 @@ The error output from the command was:
 vagrant-vbguest 설치하려 해결
 - Vagrant 공유 폴더 문제(mount.vboxsf 관련) - vagrant-vbguest 플러그인 :https://javaworld.co.kr/96
 > vagrant-vbguest 플러그인은 guest machine과 VirtualBox host의 Guest Additions 버전이 다를 경우에 알맞은 버전을 설치해 주는 플러그인입니다.
+
 
 **※ 참고링크**
 - vagrant : https://judo0179.tistory.com/120
