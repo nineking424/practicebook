@@ -51,6 +51,8 @@ Vagrant.configure("2") do |config|
         sed  -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config;
         sed  -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
         systemctl restart sshd
+        sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+        sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
         apt-get update
         apt-get upgrade -y
         apt-get install net-tools
@@ -74,6 +76,8 @@ Vagrant.configure("2") do |config|
         sed  -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config;
         sed  -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
         systemctl restart sshd
+        sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+        sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
         apt-get update
         apt-get upgrade -y
         apt-get install net-tools
