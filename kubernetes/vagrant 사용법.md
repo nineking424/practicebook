@@ -42,8 +42,11 @@ Vagrant.configure("2") do |config|
       vb.memory = 2048
     end
     cfg.vm.provision "shell", inline: <<-SHELL
+      sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+      sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
       apt-get update
       apt-get upgrade -y
+      apt-get install net-tools
     SHELL
   end
 
@@ -58,8 +61,11 @@ Vagrant.configure("2") do |config|
         vb.memory = 1024
       end
       cfg.vm.provision "shell", inline: <<-SHELL
+        sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+        sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
         apt-get update
         apt-get upgrade -y
+        apt-get install net-tools
       SHELL
     end
   end
