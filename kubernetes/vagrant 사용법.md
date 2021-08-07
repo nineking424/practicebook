@@ -10,6 +10,7 @@ C:\vagrant>vagrant init
 ```
 ### 2. Vagrantfile 설정
 - master 1대, worker 3대
+- 기본 admin 계정은 vagrant/vagrant
 ```ruby
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
