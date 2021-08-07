@@ -22,48 +22,58 @@ vagrant provision # vagrant up --provision 과 동일
 vagrant init
 ```
 ### 3. Vagrantfile 
-- master 1대, worker 3대
+- master 1대, worker 3대 : 아래 Vagrantfile의 M과 N으로 조정
 - 기본 admin 계정은 vagrant/vagrant
+- provision 명령어들을 각각의 요구사항에 맞게 수정하여 사용
+- provision 명령어들은 root 유저로 실행됨
+- provision만 따로 적용 필요시 `vagrant provision` 명령어 사용
 ```ruby
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-N=3
+M=1 # Masters
+N=3 # Workers
 Vagrant.configure("2") do |config|
-
-
-  config.vm.define "w-k8s-master" do |cfg|
-    cfg.vm.box = "ubuntu/focal64"
-    cfg.vm.hostname = "master"
-    cfg.vm.network "public_network", ip: "192.168.0.210"
-    # manual ip
-    cfg.vm.provider "virtualbox" do |vb|
-      vb.gui = false
-      vb.cpus = 2
-      vb.memory = 2048
+  (1..M).each do |i|
+    config.vm.define "nkc-master#{i}" do |cfg|
+      cfg.vm.box = "ubuntu/focal64"
+      cfg.vm.hostname = "master"
+      cfg.vm.network "public_network", ip: "192.168.0.21#{i}"
+      # manual ip
+      cfg.vm.provider "virtualbox" do |vb|
+        vb.gui = false
+        vb.cpus = 2
+        vb.memory = 2048
+      end
+      cfg.vm.provision "shell", inline: <<-SHELL
+        echo -e "yourpassword\nyourpassword" | passwd
+        sed  -i 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+        sed  -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+        sed  -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
+        systemctl restart sshd
+        apt-get update
+        apt-get upgrade -y
+        apt-get install net-tools
+      SHELL
     end
-    cfg.vm.provision "shell", inline: <<-SHELL
-      sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
-      sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
-      apt-get update
-      apt-get upgrade -y
-      apt-get install net-tools
-    SHELL
   end
 
   (1..N).each do |i|
-    config.vm.define "w-k8s-worker#{i}" do |cfg|
+    config.vm.define "nkc-worker#{i}" do |cfg|
       cfg.vm.box = "ubuntu/focal64"
       cfg.vm.hostname = "worker#{i}"
-      cfg.vm.network "public_network", ip: "192.168.0.21#{i}"
+      cfg.vm.network "public_network", ip: "192.168.0.22#{i}"
       cfg.vm.provider "virtualbox" do |vb|
         vb.gui = false
         vb.cpus = 1
         vb.memory = 1024
       end
       cfg.vm.provision "shell", inline: <<-SHELL
-        sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
-        sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+        echo -e "yourpassword\nyourpassword" | passwd
+        sed  -i 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+        sed  -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+        sed  -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
+        systemctl restart sshd
         apt-get update
         apt-get upgrade -y
         apt-get install net-tools
@@ -72,6 +82,7 @@ Vagrant.configure("2") do |config|
   end
 
 end
+
 ```
 
 ### 4. vagrant up - vm 환경구성
