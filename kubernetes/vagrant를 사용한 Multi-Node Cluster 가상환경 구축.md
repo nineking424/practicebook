@@ -10,6 +10,7 @@ vagrant status
 vagrant halt
 vagrant destroy
 vagrant reload
+vagrant provision # vagrant up --provision 과 동일
 ```
 
 ### 1. vagrant 설치
