@@ -1,0 +1,53 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "nkc-kubespray" do |cfg|
+    cfg.vm.box = "ubuntu/focal64"
+    cfg.vm.hostname = "kubespray"
+    cfg.vm.network "public_network"
+    # manual ip
+    cfg.vm.provider "virtualbox" do |vb|
+      vb.gui = false
+      vb.cpus = 2
+      vb.memory = 2048
+    end
+    cfg.vm.provision "shell", inline: <<-SHELL
+      # repository
+      sed -i 's/kr.archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+      sed -i 's/archive.ubuntu.com/mirror.kakao.com/g' /etc/apt/sources.list
+      apt-get update
+      apt-get upgrade -y
+      apt-get install net-tools
+      # root login
+      echo -e "tjrxo424\ntjrxo424" | passwd
+      sed  -i 's/#PermitRootLogin yes/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+      sed  -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/g' /etc/ssh/sshd_config;
+      sed  -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config;
+      systemctl restart sshd
+      # python
+      ln -s /usr/bin/python3.8 /usr/bin/python
+      # pip
+      apt install -y python3-pip
+      # kubespray
+      cd /root
+      git clone https://github.com/kubernetes-sigs/kubespray.git
+      cd kubespray
+      yes | pip3 install -r requirements.txt
+      sed  -i 's/override_system_hostname: true/override_system_hostname: false/g' ./roles/bootstrap-os/defaults/main.yml
+      cp -rfp ./inventory/sample ./inventory/mycluster
+      cp /vagrant/hosts.yaml ./inventory/mycluster/hosts.yaml
+      cp /vagrant/addons.yml ./inventory/mycluster/group_vars/k8s_cluster/addons.yml
+      # ssh key
+      apt install -y sshpass
+      ssh-keygen -y -t rsa -N '' -f /root/.ssh/id_rsa <<< n
+      key_val=$(cat /root/.ssh/id_rsa.pub)
+      rm /root/.ssh/known_hosts
+      sshpass -p tjrxo424 ssh -T -o StrictHostKeyChecking=no 192.168.0.211 "echo '$key_val' >> /root/.ssh/authorized_keys"
+      sshpass -p tjrxo424 ssh -T -o StrictHostKeyChecking=no 192.168.0.221 "echo '$key_val' >> /root/.ssh/authorized_keys"
+      sshpass -p tjrxo424 ssh -T -o StrictHostKeyChecking=no 192.168.0.222 "echo '$key_val' >> /root/.ssh/authorized_keys"
+    SHELL
+  end
+
+end
