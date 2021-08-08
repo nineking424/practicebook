@@ -1,0 +1,22 @@
+all:
+  hosts:
+    nkcserver:
+      ansible_host: 158.247.211.43
+      ip: 158.247.211.43
+      access_ip: 158.247.211.43
+  children:
+    kube_control_plane:
+      hosts:
+        nkcserver:
+    kube_node:
+      hosts:
+        nkcserver:
+    etcd:
+      hosts:
+        nkcserver:
+    k8s_cluster:
+      children:
+        kube_control_plane:
+        kube_node:
+    calico_rr:
+      hosts: {}
