@@ -9,7 +9,7 @@
 #### DAG을 추가하는 방법 확인 필요
 - 현재 아래 단계까지 진행 중 : Git repo를 추가하여 DAG 가져오기 
 - https://github.com/bitnami/charts/tree/master/bitnami/airflow#load-dag-files
-- 아래 페이지에 dag 저장소 구정 내용 참고
+- 아래 페이지에 dag 저장소 구정 내용 참고시, NFS를 사용한 PV 구성에 mount 하는 방향은 에러가 자주 발생하므로, Git pull 방식으로 진행하는 것이 좋을것 같음
 - https://humbledude.github.io/blog/2019/07/12/airflow-on-k8s/
 
 #### helm upgrade issue
