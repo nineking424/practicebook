@@ -3,11 +3,15 @@
 ### Reference
 * bitnami/airflow
 - https://github.com/bitnami/charts/tree/master/bitnami/airflow
+- https://humbledude.github.io/blog/2019/07/12/airflow-on-k8s/
 
 ### issues
 #### DAG을 추가하는 방법 확인 필요
 - 현재 아래 단계까지 진행 중 : Git repo를 추가하여 DAG 가져오기 
 - https://github.com/bitnami/charts/tree/master/bitnami/airflow#load-dag-files
+- 아래 페이지에 dag 저장소 구정 내용 참고
+- https://humbledude.github.io/blog/2019/07/12/airflow-on-k8s/
+
 #### helm upgrade issue
 - airflow helm package를 upgrade 진행 시 error 발생
 - upgrade 할 때에는 redis password가 반드시 필요하다고 함
