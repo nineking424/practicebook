@@ -1,0 +1,40 @@
+<설치 후 기본 명령어 사용>
+
+kubectl api-resources
+kubectl run --help
+
+1. 단일 pod 실행
+kubectl run web1 --image=public.ecr.aws/lts/nginx:1.18-20.04_beta --port=80
+kubectl exec web1 -it -- /bin/bash
+
+2. deploy 생성 & replicas 수정
+kubectl create deployment webserver --image=public.ecr.aws/docker/library/httpd:alpine3.16 --port=80 --replicas=3
+kubectl get deployments.apps
+kubectl scale deployment webserver --replicas=5
+kubectl edit deployment webserver
+
+3. Port 개방
+$ kubectl expose deployment webserver --port=80 --target-port=80
+service/webserver exposed
+$ kubectl get svc
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP   20h
+webserver    ClusterIP   10.110.147.88   <none>        80/TCP    9s
+$ curl 10.110.147.88
+<html><body><h1>It works!</h1></body></html>
+
+4. NodePort 설정
+$ kubectl edit svc webserver
+service/webserver edited
+$ kubectl get svc
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes   ClusterIP   10.96.0.1       <none>        443/TCP        20h
+webserver    NodePort    10.110.147.88   <none>        80:30910/TCP   2m26s
+- 웹 브라우저에서 접속 -> 10.0.2.51:30910
+
+5. 각종 정보 확인
+* Display one or many resources.
+$ kubectl get all
+* Show details of a specific resource or group of resources.
+$ kubectl describe webserver
+$ kubectl describe nodes

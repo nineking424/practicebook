@@ -1,0 +1,213 @@
+1. Swap 비활성화
+swapoff -a && sed -i '/swap/s/^/#/' /etc/fstab
+2. br_netfilter 설정
+# br_netfilter 모듈을 로드
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+modprobe overlay
+modprobe br_netfilter
+# bridge taffic 보게 커널 파라메터 수정
+# 필요한 sysctl 파라미터를 /etc/sysctl.d/conf 파일에 설정하면, 재부팅 후에도 값이 유지된다.
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward = 1
+EOF
+# 재부팅하지 않고 sysctl 파라미터 적용하기
+sysctl --system
+3. container runtime 설치
+(1) install docker engine : https://docs.docker.com/engine/install/ubuntu/#installation-methods
+apt update
+apt install -y ca-certificates curl gnupg lsb-release
+
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+docker -v
+
+systemctl status docker
+
+usermod -a -G docker user
+id user
+(2) install cri-docker : https://github.com/Mirantis/cri-dockerd
+wget https://github.com/Mirantis/cri-dockerd/releases/download/v0.2.5/cri-dockerd-0.2.5.amd64.tgz
+
+tar -xf cri-dockerd-0.2.5.amd64.tgz
+cp cri-dockerd/cri-dockerd /usr/bin/
+chmod +x /usr/bin/cri-dockerd
+
+# systemctl 데몬 시작파일 구성
+cat <<"EOF" > /usr/lib/systemd/system/cri-docker.service
+[Unit]
+Description=CRI Interface for Docker Application Container Engine
+Documentation=https://docs.mirantis.com
+After=network-online.target firewalld.service docker.service
+Wants=network-online.target
+Requires=cri-docker.socket
+
+[Service]
+Type=notify
+
+ExecStart=/usr/bin/cri-dockerd --network-plugin=cni --pod-infra-container-image=registry.aliyuncs.com/google_containers/pause:3.7
+
+ExecReload=/bin/kill -s HUP $MAINPID
+TimeoutSec=0
+RestartSec=2
+Restart=always
+
+StartLimitBurst=3
+
+StartLimitInterval=60s
+
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+
+TasksMax=infinity
+Delegate=yes
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+
+EOF
+
+# socket 파일 생성
+cat <<"EOF" > /usr/lib/systemd/system/cri-docker.socket
+[Unit]
+Description=CRI Docker Socket for the API
+PartOf=cri-docker.service
+
+[Socket]
+ListenStream=%t/cri-dockerd.sock
+SocketMode=0660
+SocketUser=root
+SocketGroup=docker
+
+[Install]
+WantedBy=sockets.target
+
+EOF
+
+#cri-docker 시작
+systemctl daemon-reload
+systemctl enable --now cri-docker
+systemctl status cri-docker
+
+4. Kubernetes package 설치
+# Update the apt package index and install packages needed to use the Kubernetes apt repository:
+apt-get update
+apt-get install -y apt-transport-https ca-certificates curl
+
+# Download the Google Cloud public signing key:
+curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+# Add the Kubernetes apt repository:
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+# Update apt package index, install kubelet, kubeadm and kubectl, and pin their version:
+apt-get update
+apt-get install -y kubelet kubeadm kubectl
+apt-mark hold kubelet kubeadm kubectl
+
+5. Cluster 설정
+(1) Master node 설정 : pod-network-cidr 옵션에 따라 CNI가 할당 가능한 container 수가 달라짐.
+# Initializing your control-plane node
+# control-plaine 컴포넌트 구성
+kubeadm init --pod-network-cidr=192.168.0.0/16 --cri-socket unix:///var/run/cri-dockerd.sock
+
+[출력]
+Your Kubernetes control-plane has initialized successfully!
+
+To start using your cluster, you need to run the following as a regular user:
+
+  mkdir -p $HOME/.kube
+  sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Alternatively, if you are the root user, you can run:
+
+  export KUBECONFIG=/etc/kubernetes/admin.conf
+
+You should now deploy a pod network to the cluster.
+Run "kubectl apply -f [podnetwork].yaml" with one of the options listed at:
+  https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+Then you can join any number of worker nodes by running the following on each as root:
+
+kubeadm join 10.0.2.50:6443 --token hmhz3c.z5vgnyuntyjy3xgd \
+        --discovery-token-ca-cert-hash sha256:41fbe631bddcef137fa33a0ae46860f570c1b294ec8e8092628e6f3a6e03a848
+[~출력]
+
+# Pod 네트워크가 호스트 네트워크와 겹치지 않도록 주의해야함. 
+# Calico 설치
+kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
+kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
+
+# node 초기화 될때까지 기다림
+watch kubectl get pods -n calico-system
+kubectl get pods -n calico-system
+
+# 다시 확인 : Ready 확인
+kubectl get nodes
+
+(2) (worker) node join
+kubeadm join 10.0.2.50:6443 --token hmhz3c.z5vgnyuntyjy3xgd \
+        --discovery-token-ca-cert-hash sha256:41fbe631bddcef137fa33a0ae46860f570c1b294ec8e8092628e6f3a6e03a848 \
+        --cri-socket unix:///var/run/cri-dockerd.sock
+
+(3) (master) Ready 상태가 될 때 까지 대기
+watch kubectl get no
+
+(4) (master) user 인증서 설정
+mkdir ~user/.kube
+cp /etc/kubernetes/admin.conf ~user/.kube/config
+chown -R user:user ~user/.kube 
+
+5. (master) 자동완성 설정
+sudo apt-get install bash-completion -y
+source <(kubectl completion bash)
+echo "source <(kubectl completion bash)" >> ~/.bashrc
+
+
+※ Trouble shooting
+* Applying /usr/lib/sysctl.d/50-default.conf ...
+kernel.core_uses_pid = 1
+net.ipv4.conf.default.rp_filter = 2
+net.ipv4.conf.default.accept_source_route = 0
+sysctl: setting key "net.ipv4.conf.all.accept_source_route": Invalid argument
+net.ipv4.conf.default.promote_secondaries = 1
+sysctl: setting key "net.ipv4.conf.all.promote_secondaries": Invalid argument
+
+* kubernetes 초기화하기
+1. node 리셋
+- kubeadm reset --cri-socket unix:///var/run/cri-dockerd.sock
+2. 파일삭제
+rm -rf ~/.kube/
+rm -rf /etc/kubernetes/
+3. 재설치 - Cluster 설정부터 재수행
+
+* docker image save / load
+sudo docker pull calico/pod2daemon-flexvol:v3.11.2
+sudo docker pull calico/node:v3.11.2
+sudo docker pull private-repo/calico/cni:v3.11.2
+sudo docker pull private-repo/calico/kube-controllers:v3.11.2
+
+docker save -o pod2daemon-flexvol.tar calico/pod2daemon-flexvol:v3.23.3
+docker save -o typha.tar calico/typha:v3.23.3
+
+cp ~user/*.tar .
+docker load -i pod2daemon-flexvol.tar
+docker load -i typha.tar
+
+* pod 상태 확인
+kubectl describe pod calico-typha-869f6c8755-ns9cr -n calico-system

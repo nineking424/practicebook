@@ -1,0 +1,82 @@
+<YAML 사용>
+- ref : https://kubernetes.io/ko/docs/concepts/workloads/controllers/deployment/
+
+1. Deployment 실습
+- 아래 커맨드와 YAML의 결과는 동일
+* 커맨드
+kubectl create deployment webserver --image=public.ecr.aws/docker/library/httpd:alpine3.16 --port=80 --replicas=3
+* YAML(deployment-nginx.yaml)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: public.ecr.aws/docker/library/httpd:alpine3.16
+        ports:
+        - containerPort: 80
+
+- 기존 deploy 삭제하고 yaml 파일을 사용하여 deployment 생성
+$ kubectl delete webserver
+$ kubectl apply -f deployment-nginx.yaml
+- replicas 수정 및 적용
+spec:
+  ----replicas: 3
+  replicas: 10
+
+2. Service 실습
+(1) CLI
+$ kubectl expose deployment webserver --port=80 --target-port=80
+(2) YAML
+...1의 YAML내용...
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-service
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+- 기존 deploy/service 삭제하고 yaml 파일을 사용
+$ kubectl apply -f webserver.yaml
+deployment.apps/webserver created
+service/webserver-service created
+$ kubectl get svc
+NAME                TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)        AGE
+kubernetes          ClusterIP   10.96.0.1     <none>        443/TCP        21h
+webserver-service   NodePort    10.98.247.7   <none>        80:30461/TCP   14s
+- 웹브라우저 접속 : http://10.0.2.51:30461/
+
+3. Add-On 실습 : metrics-server
+- ref1: https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/
+- ref2: https://github.com/kubernetes-sigs/metrics-server
+$ wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+- 미인증 option argument 추가
+$ vi components.yaml
+...
+apiVersion: apps/v1
+kind: Deployment
+...
+      - args:
+        - --kubelet-insecure-tls
+...
+
+4. Pods

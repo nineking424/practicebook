@@ -1,0 +1,58 @@
+<1일차>
+11:40~13:00 점심시간
+
+1. Network Setting
+- DHCP : 10.0.2.10 ~ 10.0.2.200
+- NAT Gateway IP : 10.0.2.2
+2. login accout 확인 - Snapshot manager
+ubuntu server 22.04
+root password
+user user
+master: 10.0.2.50
+node2: 10.0.2.51
+node2: 10.0.2.52
+3. kubernetes component
+1) master 구성
+- etcd
+- controller
+- scheduler
+- coreDNS*2
+- API : 모든 요청에 대한 인증 - Admission Control, ?, ?
+2) worker 구성
+- kubelet(cAdvisor) : metric 정보, 
+
+※ Kubernetes Features
+* Automatic bin packing
+- Deployment API 동작
+   (1) API가 인증정보 확인
+   (2) etcd에서 cost 확인
+   (3) scheduler에서 cost 조정
+   (4) kubelet에 요청
+   (5) container engine에 요청
+* Self-healing
+- controller
+* Roll-out/back
+* Service discovery
+* Storage
+
+※ Components / Keywords
+* CNI
+- docker network의 한계 : multi host 환경에서의 network
+- container들의 ip 조율
+- iptables에 mapping되어 routing
+- CNI 종류 -> Calico, Flunnel, ... : 각각의 특징에 맞게 도입(ex - Network Layer level, ingress 지원, ...)
+
+* YAML
+- Not markup-lang, but manifest.
+
+* RBAC
+- Role based access control
+
+4. Kubernetes component 설치
+- etcd : 가장 중요. 모든 동작정보에 대한 저장. snapshot을 저장해 백업/복구 가능
+- API : 가장 많이 일함
+1) docker 설치
+2) kubectl, kubelet, kubeadm 설치
+3) CNI 설치
+4) master/worker node join
+- https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
