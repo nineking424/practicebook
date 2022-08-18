@@ -1,0 +1,31 @@
+<Kubernetes Networking>
+* Service, ClusterIP, kube-proxy, iptables 모두다 LoadBalancer!
+* kube-proxy
+  - daemonset으로 모든 node에서 동작
+  - iptables에 rule 생성을 요청
+  - 유일한 privileaged
+* iptables
+  - linux kernel에 포함. kernel 레벨 동작(sys 영역)
+# iptables -S -t nat | grep 80
+-A KUBE-MARK-DROP -j MARK --set-xmark 0x8000/0x8000
+-A KUBE-SEP-4GP5E7PUW6IGR6PQ -s 192.168.219.80/32 -m comment --comment "kube-system/kube-dns:dns-tcp" -j KUBE-MARK-MASQ
+-A KUBE-SEP-4GP5E7PUW6IGR6PQ -p tcp -m comment --comment "kube-system/kube-dns:dns-tcp" -m tcp -j DNAT --to-destination 192.168.219.80:53
+-A KUBE-SEP-7SBGTD232WKYVQ6N -s 192.168.219.80/32 -m comment --comment "kube-system/kube-dns:dns" -j KUBE-MARK-MASQ
+-A KUBE-SEP-7SBGTD232WKYVQ6N -p udp -m comment --comment "kube-system/kube-dns:dns" -m udp -j DNAT --to-destination 192.168.219.80:53
+-A KUBE-SEP-GTVY7Q4GVBC4CRE2 -s 192.168.219.80/32 -m comment --comment "kube-system/kube-dns:metrics" -j KUBE-MARK-MASQ
+-A KUBE-SEP-GTVY7Q4GVBC4CRE2 -p tcp -m comment --comment "kube-system/kube-dns:metrics" -m tcp -j DNAT --to-destination 192.168.219.80:9153
+-A KUBE-SVC-ERIFXISQEP7F7OF4 -m comment --comment "kube-system/kube-dns:dns-tcp -> 192.168.219.80:53" -j KUBE-SEP-4GP5E7PUW6IGR6PQ
+-A KUBE-SVC-JD5MR3NA4I4DYORP -m comment --comment "kube-system/kube-dns:metrics -> 192.168.219.80:9153" -j KUBE-SEP-GTVY7Q4GVBC4CRE2
+-A KUBE-SVC-TCOU7JCQXEZGVUNU -m comment --comment "kube-system/kube-dns:dns -> 192.168.219.80:53" -j KUBE-SEP-7SBGTD232WKYVQ6N
+# iptables -S -t nat | grep KUBE-SVC-ERIFXISQEP7F7OF4
+-N KUBE-SVC-ERIFXISQEP7F7OF4
+-A KUBE-SERVICES -d 10.96.0.10/32 -p tcp -m comment --comment "kube-system/kube-dns:dns-tcp cluster IP" -m tcp --dport 53 -j KUBE-SVC-ERIFXISQEP7F7OF4
+-A KUBE-SVC-ERIFXISQEP7F7OF4 ! -s 192.168.0.0/16 -d 10.96.0.10/32 -p tcp -m comment --comment "kube-system/kube-dns:dns-tcp cluster IP" -m tcp --dport 53 -j KUBE-MARK-MASQ
+-A KUBE-SVC-ERIFXISQEP7F7OF4 -m comment --comment "kube-system/kube-dns:dns-tcp -> 192.168.219.79:53" -m statistic --mode random --probability 0.50000000000 -j KUBE-SEP-QAKNPRQLOCCFUZAB
+-A KUBE-SVC-ERIFXISQEP7F7OF4 -m comment --comment "kube-system/kube-dns:dns-tcp -> 192.168.219.80:53" -j KUBE-SEP-4GP5E7PUW6IGR6PQ
+
+* ipvs
+- iptables의 한계. 오버헤드 문제 해결 위함.
+
+* ingress
+- 
