@@ -1,0 +1,100 @@
+<네임스페이스>
+1. 네임스페이스 생성
+$ kubectl create namespace samsung-ds
+namespace/samsung-ds created
+$ kubectl get namespace
+NAME               STATUS   AGE
+...
+samsung-ds         Active   22s
+...
+2. deployment 적용
+$ vi deployment-nginx.yaml
+metadata:
+  name: webserver
++  namespace: samsung-ds
+...
+$ kubectl delete deploy webserver
+deployment.apps "webserver" deleted
+$ kubectl apply -f deployment-nginx.yaml
+deployment.apps/webserver created
+$ kubectl get po -A | grep webserver
+samsung-ds         webserver-5bf7b8d848-8ld4t                1/1     Running   0             2m22s
+samsung-ds         webserver-5bf7b8d848-8nbr6                1/1     Running   0             2m22s
+samsung-ds         webserver-5bf7b8d848-vmfs8                1/1     Running   0             2m22s
+
+<레이블>
+- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+$ kubectl label --help
+1. 노드 레이블 확인
+$ kubectl get no --show-labels
+NAME     STATUS   ROLES           AGE   VERSION   LABELS
+master   Ready    control-plane   40h   v1.24.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=master,kubernetes.io/os=linux,node-role.kubernete             s.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+node1    Ready    <none>          40h   v1.24.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node1,kubernetes.io/os=linux
+node2    Ready    <none>          40h   v1.24.3   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=node2,kubernetes.io/os=linux
+
+2. 레이블 생성
+$ kubectl label node node1 disktype=ssd tier=frontend
+node/node1 labeled
+$ kubectl label node node2 disktype=hdd
+node/node2 labeled
+$ kubectl get nodes -L disktype
+NAME     STATUS   ROLES           AGE   VERSION   DISKTYPE
+master   Ready    control-plane   40h   v1.24.3
+node1    Ready    <none>          40h   v1.24.3   ssd
+node2    Ready    <none>          40h   v1.24.3   hdd
+
+3. 레이블 삭제
+$ kubectl label node node1 tier-
+node/node1 unlabeled
+$ kubectl get nodes -L tier
+NAME     STATUS   ROLES           AGE   VERSION   TIER
+master   Ready    control-plane   40h   v1.24.3
+node1    Ready    <none>          40h   v1.24.3
+node2    Ready    <none>          40h   v1.24.3
+
+4. nodeSelector 적용
+- Pod template에 추가
+$ vi deployment-nginx.yaml
+...
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
++      nodeSelector:
++        disktype: ssd
+...
+$ kubectl apply -f deployment.yaml
+$ kubectl get po -o wide
+NAME                         READY   STATUS    RESTARTS      AGE   IP                NODE    NOMINATED NODE   READINESS GATES
+web1                         1/1     Running   3 (29m ago)   20h   192.168.166.150   node1   <none>           <none>
+webserver-5bf7b8d848-c7std   1/1     Running   0             87s   192.168.166.159   node1   <none>           <none>
+webserver-5bf7b8d848-r6hhv   1/1     Running   0             81s   192.168.166.160   node1   <none>           <none>
+webserver-5bf7b8d848-wdnkx   1/1     Running   0             79s   192.168.166.161   node1   <none>           <none>
+
+<Affinity and anti-affinity>
+- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
+
+<Kubernetes Controller 동작방식>
+* DaemonSet
+- https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+ex1) CNI, kube-proxy, ...
+ex2) 모니터링 툴, 로그 수집 툴, ...
+ex3) fluentd
+
+* Deployment spec
+- progressDeadlineSeconds : 업데이트 수행 대기 한계
+- revisionHistory : 과거 버전의 RS를 몇개까지 남기는가
+- maxSurge : rollingUpdate시 new pod 생성 비율
+- maxSurge : rollingUpdate시 old pod 제거 비율
+  -> 3개 pod, 50% = 1.5 올림 = 2
+  -> 3개 pod, 25% = 0.75 올림 = 1
+
+* StatefulSet
+- pod 이름의 순서와 유일성을 보장해줌
+- pod가 종료되더라도 volume을 유지
+- 단일 진입점을 제공하는 Service 반드시 필요
+
+* Jobs
+- completions
+- parallelism
